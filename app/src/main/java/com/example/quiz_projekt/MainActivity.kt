@@ -27,7 +27,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var sensorManager: SensorManager
     private var accelerometer: Sensor? = null
-    private lateinit var shakeDetector: ShakeDetector
+    private lateinit var gestureDetector: GestureDetector
 
     private var questions = listOf<TriviaQuestion>()
     private var currentQuestionIndex = 0
@@ -48,13 +48,15 @@ class MainActivity : AppCompatActivity() {
         btnAnswer4 = findViewById(R.id.btnAnswer4)
         animationView = findViewById(R.id.animationView)
 
-        // Setup shake detector
+        // Setup gesture detector (shake + tilt)
         sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
 
-        shakeDetector = ShakeDetector {
-            onShakeDetected()
-        }
+        gestureDetector = GestureDetector(
+            onShake = { onShakeDetected() },
+            onTiltLeft = { onTiltLeft() },
+            onTiltRight = { onTiltRight() }
+        )
 
         // Setup answer buttons
         setupAnswerButtons()
@@ -73,6 +75,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadQuestions() {
+        tvQuestion.text = "Loading questions..."
         lifecycleScope.launch {
             try {
                 val response = RetrofitClient.apiService.getQuestions(amount = 10)
@@ -97,9 +100,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun displayQuestion() {
+        if (questions.isEmpty()) return
+
         if (currentQuestionIndex >= questions.size) {
-            showFinalScore()
-            return
+            currentQuestionIndex = 0 // Loop back to start
+        }
+
+        if (currentQuestionIndex < 0) {
+            currentQuestionIndex = questions.size - 1 // Go to last question
         }
 
         val question = questions[currentQuestionIndex]
@@ -179,12 +187,33 @@ class MainActivity : AppCompatActivity() {
         loadQuestions()
     }
 
+    // GESTURE HANDLERS
+
     private fun onShakeDetected() {
-        // When phone is shaken, load new question
         runOnUiThread {
-            if (questions.isNotEmpty() && currentQuestionIndex < questions.size) {
-                Toast.makeText(this, "📱 Loading new question...", Toast.LENGTH_SHORT).show()
-                currentQuestionIndex = (currentQuestionIndex + 1) % questions.size
+            if (questions.isNotEmpty()) {
+                Toast.makeText(this, "📱 Shake - Random question!", Toast.LENGTH_SHORT).show()
+                currentQuestionIndex = (0 until questions.size).random()
+                displayQuestion()
+            }
+        }
+    }
+
+    private fun onTiltLeft() {
+        runOnUiThread {
+            if (questions.isNotEmpty()) {
+                Toast.makeText(this, "⬅️ Previous question", Toast.LENGTH_SHORT).show()
+                currentQuestionIndex--
+                displayQuestion()
+            }
+        }
+    }
+
+    private fun onTiltRight() {
+        runOnUiThread {
+            if (questions.isNotEmpty()) {
+                Toast.makeText(this, "➡️ Next question", Toast.LENGTH_SHORT).show()
+                currentQuestionIndex++
                 displayQuestion()
             }
         }
@@ -193,12 +222,16 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         accelerometer?.also { acc ->
-            sensorManager.registerListener(shakeDetector, acc, SensorManager.SENSOR_DELAY_NORMAL)
+            sensorManager.registerListener(
+                gestureDetector,
+                acc,
+                SensorManager.SENSOR_DELAY_GAME
+            )
         }
     }
 
     override fun onPause() {
         super.onPause()
-        sensorManager.unregisterListener(shakeDetector)
+        sensorManager.unregisterListener(gestureDetector)
     }
 }
