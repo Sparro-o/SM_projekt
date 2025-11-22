@@ -4,6 +4,7 @@
 - usunąć niepotrzebne pliki .kt z API i com.example
 
 **WYKORZYSTANE PLIKI**
+
 ✅ MainActivity.kt - główna aktywność, logika aplikacji, obsługa UI i gestów
 ✅ GestureDetector.kt - wykrywanie potrząsania i przechyleń telefonu
 
@@ -38,3 +39,6 @@ Lokalizacja: app/
 Lokalizacja: główny folder projektu
 
 ✅ settings.gradle.kt - repozytoria (Maven, Google, JitPack - jeśli dodawałeś)
+
+**LINK DO CLAUDE**
+https://claude.ai/share/5a0656cd-41a4-44dd-8bef-36c979a95494
