@@ -3,7 +3,8 @@
 - usunąć komentarze
 - usunąć niepotrzebne pliki .kt z API i com.example
 - usunąć zbędne porady o zmianie pytań
-
+- zrobić aby X i Y rote zmieniał pytanie
+ 
 **WYKORZYSTANE PLIKI**
 
 ✅ MainActivity.kt - główna aktywność, logika aplikacji, obsługa UI i gestów

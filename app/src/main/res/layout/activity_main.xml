@@ -99,7 +99,7 @@
         android:id="@+id/tvShakeHint"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="📱 Shake for random\n⬅️ Tilt left = Previous | Tilt right = Next ➡️"
+        android:text="📱 Shake for random | ⬅️➡️ Tilt for next question"
         android:textSize="11sp"
         android:textColor="#999999"
         android:gravity="center"

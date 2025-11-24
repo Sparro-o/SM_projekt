@@ -29,10 +29,11 @@ class MainActivity : AppCompatActivity() {
     private var accelerometer: Sensor? = null
     private lateinit var gestureDetector: GestureDetector
 
-    private var questions = listOf<TriviaQuestion>()
+    private var questions = mutableListOf<TriviaQuestion>()
     private var currentQuestionIndex = 0
     private var score = 0
     private var answeredQuestions = 0
+    private var isLoadingQuestions = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -75,12 +76,22 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadQuestions() {
-        tvQuestion.text = "Loading questions..."
+        if (isLoadingQuestions) return
+
+        isLoadingQuestions = true
+        tvQuestion.text = "Loading new questions..."
+
         lifecycleScope.launch {
             try {
                 val response = RetrofitClient.apiService.getQuestions(amount = 10)
                 if (response.response_code == 0) {
-                    questions = response.results
+                    // Dodaj nowe pytania do listy
+                    questions.addAll(response.results)
+                    Toast.makeText(
+                        this@MainActivity,
+                        "✓ Loaded ${response.results.size} new questions",
+                        Toast.LENGTH_SHORT
+                    ).show()
                     displayQuestion()
                 } else {
                     Toast.makeText(
@@ -95,19 +106,27 @@ class MainActivity : AppCompatActivity() {
                     "Error: ${e.message}",
                     Toast.LENGTH_SHORT
                 ).show()
+            } finally {
+                isLoadingQuestions = false
             }
         }
     }
 
     private fun displayQuestion() {
-        if (questions.isEmpty()) return
-
-        if (currentQuestionIndex >= questions.size) {
-            currentQuestionIndex = 0 // Loop back to start
+        if (questions.isEmpty()) {
+            loadQuestions()
+            return
         }
 
+        // Jeśli doszliśmy do końca listy, pobierz nowe pytania
+        if (currentQuestionIndex >= questions.size) {
+            loadQuestions()
+            return
+        }
+
+        // Zabezpieczenie przed ujemnymi indeksami
         if (currentQuestionIndex < 0) {
-            currentQuestionIndex = questions.size - 1 // Go to last question
+            currentQuestionIndex = 0
         }
 
         val question = questions[currentQuestionIndex]
@@ -128,8 +147,8 @@ class MainActivity : AppCompatActivity() {
         // Enable all buttons
         enableButtons(true)
 
-        // Update score
-        tvScore.text = "Score: $score/$answeredQuestions"
+        // Update score and progress
+        tvScore.text = "Score: $score/$answeredQuestions | Question: ${currentQuestionIndex + 1}/${questions.size}"
     }
 
     private fun checkAnswer(selectedAnswer: String) {
@@ -164,17 +183,23 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showFinalScore() {
-        tvQuestion.text = "Quiz Completed!"
-        tvCategory.text = "Final Score"
-        tvScore.text = "$score out of $answeredQuestions"
+        tvQuestion.text = "Great job!"
+        tvCategory.text = "You can continue or restart"
+        tvScore.text = "Score: $score out of $answeredQuestions"
 
-        btnAnswer1.text = "Restart Quiz"
+        btnAnswer1.text = "Continue Quiz"
         btnAnswer1.isEnabled = true
         btnAnswer1.setOnClickListener {
+            setupAnswerButtons()
+            displayQuestion() // Kontynuuj od aktualnego pytania
+        }
+
+        btnAnswer2.text = "Restart Quiz"
+        btnAnswer2.isEnabled = true
+        btnAnswer2.setOnClickListener {
             resetQuiz()
         }
 
-        btnAnswer2.isEnabled = false
         btnAnswer3.isEnabled = false
         btnAnswer4.isEnabled = false
     }
@@ -183,6 +208,7 @@ class MainActivity : AppCompatActivity() {
         score = 0
         answeredQuestions = 0
         currentQuestionIndex = 0
+        questions.clear() // Wyczyść starą listę pytań
         setupAnswerButtons()
         loadQuestions()
     }
@@ -202,9 +228,9 @@ class MainActivity : AppCompatActivity() {
     private fun onTiltLeft() {
         runOnUiThread {
             if (questions.isNotEmpty()) {
-                Toast.makeText(this, "⬅️ Previous question", Toast.LENGTH_SHORT).show()
-                currentQuestionIndex--
-                displayQuestion()
+                Toast.makeText(this, "⬅️ Next question", Toast.LENGTH_SHORT).show()
+                currentQuestionIndex++
+                displayQuestion() // Automatycznie załaduje nowe pytania gdy potrzeba
             }
         }
     }
@@ -214,7 +240,7 @@ class MainActivity : AppCompatActivity() {
             if (questions.isNotEmpty()) {
                 Toast.makeText(this, "➡️ Next question", Toast.LENGTH_SHORT).show()
                 currentQuestionIndex++
-                displayQuestion()
+                displayQuestion() // Automatycznie załaduje nowe pytania gdy potrzeba
             }
         }
     }
