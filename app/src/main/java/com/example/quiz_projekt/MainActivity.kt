@@ -40,7 +40,6 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Initialize views
         tvQuestion = findViewById(R.id.tvQuestion)
         tvCategory = findViewById(R.id.tvCategory)
         tvScore = findViewById(R.id.tvScore)
@@ -50,7 +49,6 @@ class MainActivity : AppCompatActivity() {
         btnAnswer4 = findViewById(R.id.btnAnswer4)
         animationView = findViewById(R.id.animationView)
 
-        // Setup gesture detector (shake + tilt + rotation)
         sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
         rotationSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
@@ -61,10 +59,8 @@ class MainActivity : AppCompatActivity() {
             onRotate = { onRotateDetected() }
         )
 
-        // Setup answer buttons
         setupAnswerButtons()
 
-        // Load questions
         loadQuestions()
     }
 
@@ -87,13 +83,12 @@ class MainActivity : AppCompatActivity() {
             try {
                 val response = RetrofitClient.apiService.getQuestions(amount = 10)
                 if (response.response_code == 0) {
-                    // Dodaj nowe pytania do listy
                     questions.addAll(response.results)
-                    Toast.makeText(
+                    /*Toast.makeText(
                         this@MainActivity,
-                        "✓ Loaded ${response.results.size} new questions",
+                        "Loaded ${response.results.size} new questions",
                         Toast.LENGTH_SHORT
-                    ).show()
+                    ).show()*/
                     displayQuestion()
                 } else {
                     Toast.makeText(
@@ -120,36 +115,29 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        // Jeśli doszliśmy do końca listy, pobierz nowe pytania
         if (currentQuestionIndex >= questions.size) {
             loadQuestions()
             return
         }
 
-        // Zabezpieczenie przed ujemnymi indeksami
         if (currentQuestionIndex < 0) {
             currentQuestionIndex = 0
         }
 
         val question = questions[currentQuestionIndex]
 
-        // Display category and question (decode HTML entities)
         tvCategory.text = Html.fromHtml(question.category, Html.FROM_HTML_MODE_LEGACY)
         tvQuestion.text = Html.fromHtml(question.question, Html.FROM_HTML_MODE_LEGACY)
 
-        // Prepare answers and shuffle
         val answers = (question.incorrect_answers + question.correct_answer).shuffled()
 
-        // Display answers on buttons
         btnAnswer1.text = Html.fromHtml(answers.getOrNull(0) ?: "", Html.FROM_HTML_MODE_LEGACY)
         btnAnswer2.text = Html.fromHtml(answers.getOrNull(1) ?: "", Html.FROM_HTML_MODE_LEGACY)
         btnAnswer3.text = Html.fromHtml(answers.getOrNull(2) ?: "", Html.FROM_HTML_MODE_LEGACY)
         btnAnswer4.text = Html.fromHtml(answers.getOrNull(3) ?: "", Html.FROM_HTML_MODE_LEGACY)
 
-        // Enable all buttons
         enableButtons(true)
 
-        // Update score and progress
         tvScore.text = "Score: $score/$answeredQuestions | Question: ${currentQuestionIndex + 1}/${questions.size}"
     }
 
@@ -161,16 +149,14 @@ class MainActivity : AppCompatActivity() {
 
         if (selectedAnswer == correctAnswer) {
             score++
-            Toast.makeText(this, "✓ Correct!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Correct!", Toast.LENGTH_SHORT).show()
             animationView.playAnimation()
         } else {
-            Toast.makeText(this, "✗ Wrong! Correct: $correctAnswer", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Wrong! Correct: $correctAnswer", Toast.LENGTH_LONG).show()
         }
 
-        // Disable buttons temporarily
         enableButtons(false)
 
-        // Move to next question after delay
         tvQuestion.postDelayed({
             currentQuestionIndex++
             displayQuestion()
@@ -184,43 +170,10 @@ class MainActivity : AppCompatActivity() {
         btnAnswer4.isEnabled = enabled
     }
 
-    private fun showFinalScore() {
-        tvQuestion.text = "Great job!"
-        tvCategory.text = "You can continue or restart"
-        tvScore.text = "Score: $score out of $answeredQuestions"
-
-        btnAnswer1.text = "Continue Quiz"
-        btnAnswer1.isEnabled = true
-        btnAnswer1.setOnClickListener {
-            setupAnswerButtons()
-            displayQuestion() // Kontynuuj od aktualnego pytania
-        }
-
-        btnAnswer2.text = "Restart Quiz"
-        btnAnswer2.isEnabled = true
-        btnAnswer2.setOnClickListener {
-            resetQuiz()
-        }
-
-        btnAnswer3.isEnabled = false
-        btnAnswer4.isEnabled = false
-    }
-
-    private fun resetQuiz() {
-        score = 0
-        answeredQuestions = 0
-        currentQuestionIndex = 0
-        questions.clear() // Wyczyść starą listę pytań
-        setupAnswerButtons()
-        loadQuestions()
-    }
-
-    // GESTURE HANDLERS
-
     private fun onShakeDetected() {
         runOnUiThread {
             if (questions.isNotEmpty()) {
-                Toast.makeText(this, "📱 Shake - Random question!", Toast.LENGTH_SHORT).show()
+                //Toast.makeText(this, "📱 Shake - Random question!", Toast.LENGTH_SHORT).show()
                 currentQuestionIndex = (0 until questions.size).random()
                 displayQuestion()
             }
@@ -230,7 +183,7 @@ class MainActivity : AppCompatActivity() {
     private fun onTiltDetected() {
         runOnUiThread {
             if (questions.isNotEmpty()) {
-                Toast.makeText(this, "🔄 Tilt - Next question!", Toast.LENGTH_SHORT).show()
+                //Toast.makeText(this, "🔄 Tilt - Next question!", Toast.LENGTH_SHORT).show()
                 currentQuestionIndex++
                 displayQuestion() // Automatycznie załaduje nowe pytania gdy potrzeba
             }
@@ -240,7 +193,7 @@ class MainActivity : AppCompatActivity() {
     private fun onRotateDetected() {
         runOnUiThread {
             if (questions.isNotEmpty()) {
-                Toast.makeText(this, "↻ Rotate - Next question!", Toast.LENGTH_SHORT).show()
+                //Toast.makeText(this, "↻ Rotate - Next question!", Toast.LENGTH_SHORT).show()
                 currentQuestionIndex++
                 displayQuestion() // Automatycznie załaduje nowe pytania gdy potrzeba
             }

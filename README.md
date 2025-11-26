@@ -2,7 +2,6 @@
 **TO DO:**
 - usunąć komentarze
 - usunąć niepotrzebne pliki .kt z API i com.example
-- usunąć zbędne porady o zmianie pytań
  
 **WYKORZYSTANE PLIKI**
 
