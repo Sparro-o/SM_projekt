@@ -3,7 +3,6 @@
 - usunąć komentarze
 - usunąć niepotrzebne pliki .kt z API i com.example
 - usunąć zbędne porady o zmianie pytań
-- zrobić aby X i Y rote zmieniał pytanie
  
 **WYKORZYSTANE PLIKI**
 

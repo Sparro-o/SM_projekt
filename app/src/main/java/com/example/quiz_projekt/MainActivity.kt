@@ -27,6 +27,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var sensorManager: SensorManager
     private var accelerometer: Sensor? = null
+    private var rotationSensor: Sensor? = null
     private lateinit var gestureDetector: GestureDetector
 
     private var questions = mutableListOf<TriviaQuestion>()
@@ -49,14 +50,15 @@ class MainActivity : AppCompatActivity() {
         btnAnswer4 = findViewById(R.id.btnAnswer4)
         animationView = findViewById(R.id.animationView)
 
-        // Setup gesture detector (shake + tilt)
+        // Setup gesture detector (shake + tilt + rotation)
         sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+        rotationSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
 
         gestureDetector = GestureDetector(
             onShake = { onShakeDetected() },
-            onTiltLeft = { onTiltLeft() },
-            onTiltRight = { onTiltRight() }
+            onTilt = { onTiltDetected() },
+            onRotate = { onRotateDetected() }
         )
 
         // Setup answer buttons
@@ -225,20 +227,20 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun onTiltLeft() {
+    private fun onTiltDetected() {
         runOnUiThread {
             if (questions.isNotEmpty()) {
-                Toast.makeText(this, "⬅️ Next question", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "🔄 Tilt - Next question!", Toast.LENGTH_SHORT).show()
                 currentQuestionIndex++
                 displayQuestion() // Automatycznie załaduje nowe pytania gdy potrzeba
             }
         }
     }
 
-    private fun onTiltRight() {
+    private fun onRotateDetected() {
         runOnUiThread {
             if (questions.isNotEmpty()) {
-                Toast.makeText(this, "➡️ Next question", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "↻ Rotate - Next question!", Toast.LENGTH_SHORT).show()
                 currentQuestionIndex++
                 displayQuestion() // Automatycznie załaduje nowe pytania gdy potrzeba
             }
@@ -251,6 +253,13 @@ class MainActivity : AppCompatActivity() {
             sensorManager.registerListener(
                 gestureDetector,
                 acc,
+                SensorManager.SENSOR_DELAY_GAME
+            )
+        }
+        rotationSensor?.also { rot ->
+            sensorManager.registerListener(
+                gestureDetector,
+                rot,
                 SensorManager.SENSOR_DELAY_GAME
             )
         }
