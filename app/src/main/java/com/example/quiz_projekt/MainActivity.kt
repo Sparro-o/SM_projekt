@@ -84,11 +84,6 @@ class MainActivity : AppCompatActivity() {
                 val response = RetrofitClient.apiService.getQuestions(amount = 10)
                 if (response.response_code == 0) {
                     questions.addAll(response.results)
-                    /*Toast.makeText(
-                        this@MainActivity,
-                        "Loaded ${response.results.size} new questions",
-                        Toast.LENGTH_SHORT
-                    ).show()*/
                     displayQuestion()
                 } else {
                     Toast.makeText(
@@ -138,7 +133,7 @@ class MainActivity : AppCompatActivity() {
 
         enableButtons(true)
 
-        tvScore.text = "Score: $score/$answeredQuestions | Question: ${currentQuestionIndex + 1}/${questions.size}"
+        tvScore.text = "Score: $score/$answeredQuestions"
     }
 
     private fun checkAnswer(selectedAnswer: String) {
@@ -173,7 +168,6 @@ class MainActivity : AppCompatActivity() {
     private fun onShakeDetected() {
         runOnUiThread {
             if (questions.isNotEmpty()) {
-                //Toast.makeText(this, "📱 Shake - Random question!", Toast.LENGTH_SHORT).show()
                 currentQuestionIndex = (0 until questions.size).random()
                 displayQuestion()
             }
@@ -183,9 +177,8 @@ class MainActivity : AppCompatActivity() {
     private fun onTiltDetected() {
         runOnUiThread {
             if (questions.isNotEmpty()) {
-                //Toast.makeText(this, "🔄 Tilt - Next question!", Toast.LENGTH_SHORT).show()
                 currentQuestionIndex++
-                displayQuestion() // Automatycznie załaduje nowe pytania gdy potrzeba
+                displayQuestion()
             }
         }
     }
@@ -193,9 +186,8 @@ class MainActivity : AppCompatActivity() {
     private fun onRotateDetected() {
         runOnUiThread {
             if (questions.isNotEmpty()) {
-                //Toast.makeText(this, "↻ Rotate - Next question!", Toast.LENGTH_SHORT).show()
                 currentQuestionIndex++
-                displayQuestion() // Automatycznie załaduje nowe pytania gdy potrzeba
+                displayQuestion()
             }
         }
     }

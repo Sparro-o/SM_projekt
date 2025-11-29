@@ -1,4 +1,4 @@
-package com.example.quiz_projekt // Użyj swojej nazwy pakietu
+package com.example.quiz_projekt
 
 import android.hardware.Sensor
 import android.hardware.SensorEvent
@@ -13,29 +13,25 @@ class GestureDetector(
     private val onRotate: () -> Unit
 ) : SensorEventListener {
 
-    // Parametry dla potrząsania
     private var lastShakeTime: Long = 0
     private val shakeThreshold = 12f
     private val shakeInterval = 1000L
 
-    // Parametry dla przechylenia (dowolny kierunek)
     private var lastTiltTime: Long = 0
-    private val tiltThreshold = 6f
+    private val tiltThreshold = 7f
+    private val neutralThreshold = 3f
     private val tiltInterval = 1500L
     private var isTilted = false
     private var neutralPositionX = 0f
     private var neutralPositionY = 0f
-
-    // Parametry dla obrotu (rotation wokół osi Z)
     private var lastRotationTime: Long = 0
     private var lastRotationZ = 0f
-    private val rotationThreshold = 45f // Minimum 45 stopni obrotu
+    private val rotationThreshold = 45f
     private val rotationInterval = 1500L
     private var isRotationCalibrated = false
 
     private var isCalibrated = false
 
-    // Flaga do sprawdzenia typu sensora
     private var sensorType: Int = -1
 
     override fun onSensorChanged(event: SensorEvent?) {
@@ -55,11 +51,10 @@ class GestureDetector(
     }
 
     private fun handleAccelerometer(event: SensorEvent, currentTime: Long) {
-        val x = event.values[0] // Przechylenie lewo/prawo
-        val y = event.values[1] // Przechylenie przód/tył
-        val z = event.values[2] // Góra/dół
+        val x = event.values[0]
+        val y = event.values[1]
+        val z = event.values[2]
 
-        // Kalibracja - zapisz pozycję neutralną przy pierwszym odczycie
         if (!isCalibrated) {
             neutralPositionX = x
             neutralPositionY = y
@@ -67,24 +62,20 @@ class GestureDetector(
             return
         }
 
-        // 1. WYKRYWANIE POTRZĄSANIA (priorytet)
         if (detectShake(x, y, z, currentTime)) {
-            return // Jeśli wykryto potrząsanie, nie sprawdzaj przechylenia
+            return
         }
 
-        // 2. WYKRYWANIE PRZECHYLENIA W DOWOLNYM KIERUNKU
         detectAnyTilt(x, y, currentTime)
     }
 
     private fun handleRotation(event: SensorEvent, currentTime: Long) {
-        // Konwertuj rotation vector na kąty orientacji
         val rotationMatrix = FloatArray(9)
         val orientationAngles = FloatArray(3)
 
         SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values)
         SensorManager.getOrientation(rotationMatrix, orientationAngles)
 
-        // orientationAngles[0] = azimuth (rotation around Z axis) w radianach
         val currentRotationZ = Math.toDegrees(orientationAngles[0].toDouble()).toFloat()
 
         if (!isRotationCalibrated) {
@@ -93,33 +84,35 @@ class GestureDetector(
             return
         }
 
-        if (currentTime - lastRotationTime > rotationInterval) {
-            // Oblicz różnicę w rotacji
-            var rotationDifference = abs(currentRotationZ - lastRotationZ)
+        var rotationDifference = abs(currentRotationZ - lastRotationZ)
 
-            // Obsługa przejścia przez 180/-180 stopni
-            if (rotationDifference > 180) {
-                rotationDifference = 360 - rotationDifference
-            }
+        if (rotationDifference > 180) {
+            rotationDifference = 360 - rotationDifference
+        }
 
-            // Wykryj obrót o minimum 45 stopni
-            if (rotationDifference >= rotationThreshold) {
-                lastRotationTime = currentTime
+        val isNearNeutral = rotationDifference < 10f
+
+        if (isNearNeutral) {
+            if (currentTime - lastRotationTime > rotationInterval) {
                 lastRotationZ = currentRotationZ
-                isTilted = false // Reset innych gestów
-                onRotate()
+                isRotationCalibrated = true
             }
+        } else if (rotationDifference >= rotationThreshold &&
+            currentTime - lastRotationTime > rotationInterval) {
+            lastRotationTime = currentTime
+            lastRotationZ = currentRotationZ
+            isTilted = false
+            onRotate()
         }
     }
 
     private fun detectShake(x: Float, y: Float, z: Float, currentTime: Long): Boolean {
-        // Oblicz całkowitą siłę przyspieszenia
         val acceleration = sqrt(x * x + y * y + z * z) - SensorManager.GRAVITY_EARTH
 
         if (acceleration > shakeThreshold) {
             if (currentTime - lastShakeTime > shakeInterval) {
                 lastShakeTime = currentTime
-                isTilted = false // Reset stanu przechylenia
+                isTilted = false
                 onShake()
                 return true
             }
@@ -128,30 +121,28 @@ class GestureDetector(
     }
 
     private fun detectAnyTilt(x: Float, y: Float, currentTime: Long) {
-        if (currentTime - lastTiltTime > tiltInterval) {
+        val deltaX = abs(x - neutralPositionX)
+        val deltaY = abs(y - neutralPositionY)
 
-            // Oblicz różnicę od pozycji neutralnej
-            val deltaX = abs(x - neutralPositionX)
-            val deltaY = abs(y - neutralPositionY)
+        val maxDelta = kotlin.math.max(deltaX, deltaY)
 
-            // Sprawdź czy jest wystarczające przechylenie w DOWOLNYM kierunku
-            val isTiltedNow = deltaX > tiltThreshold || deltaY > tiltThreshold
+        val isTiltedNow = maxDelta > tiltThreshold
+        val isNeutralNow = maxDelta < neutralThreshold
 
-            if (isTiltedNow && !isTilted) {
-                // Wykryto nowe przechylenie
+        when {
+            isTiltedNow && !isTilted && currentTime - lastTiltTime > tiltInterval -> {
                 lastTiltTime = currentTime
                 isTilted = true
                 onTilt()
+            }
 
-            } else if (!isTiltedNow && isTilted) {
-                // Telefon wrócił do pozycji neutralnej - gotowy na nowe przechylenie
+            isNeutralNow && isTilted -> {
                 isTilted = false
             }
         }
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-        // Nie potrzebne
     }
 
     fun resetCalibration() {

@@ -1,6 +1,5 @@
 # SM_projekt
 **TO DO:**
-- usunąć komentarze
 - usunąć niepotrzebne pliki .kt z API i com.example
  
 **WYKORZYSTANE PLIKI**
