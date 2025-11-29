@@ -24,6 +24,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnAnswer3: Button
     private lateinit var btnAnswer4: Button
     private lateinit var animationView: LottieAnimationView
+    private lateinit var resultAnimationView: LottieAnimationView
 
     private lateinit var sensorManager: SensorManager
     private var accelerometer: Sensor? = null
@@ -48,6 +49,7 @@ class MainActivity : AppCompatActivity() {
         btnAnswer3 = findViewById(R.id.btnAnswer3)
         btnAnswer4 = findViewById(R.id.btnAnswer4)
         animationView = findViewById(R.id.animationView)
+        resultAnimationView = findViewById(R.id.resultAnimationView)
 
         sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
@@ -144,10 +146,14 @@ class MainActivity : AppCompatActivity() {
 
         if (selectedAnswer == correctAnswer) {
             score++
-            Toast.makeText(this, "Correct!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Correct", Toast.LENGTH_SHORT).show()
             animationView.playAnimation()
+
+            showResultAnimation(true)
         } else {
-            Toast.makeText(this, "Wrong! Correct: $correctAnswer", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Wrong, Correct: $correctAnswer", Toast.LENGTH_LONG).show()
+
+            showResultAnimation(false)
         }
 
         enableButtons(false)
@@ -155,7 +161,20 @@ class MainActivity : AppCompatActivity() {
         tvQuestion.postDelayed({
             currentQuestionIndex++
             displayQuestion()
+            resultAnimationView.visibility = android.view.View.GONE
         }, 2000)
+    }
+
+    private fun showResultAnimation(isCorrect: Boolean) {
+        resultAnimationView.visibility = android.view.View.VISIBLE
+
+        if (isCorrect) {
+            resultAnimationView.setAnimation(R.raw.correct_animation)
+        } else {
+            resultAnimationView.setAnimation(R.raw.fail_animation)
+        }
+
+        resultAnimationView.playAnimation()
     }
 
     private fun enableButtons(enabled: Boolean) {
